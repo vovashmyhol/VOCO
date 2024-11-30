@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Самолётик</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const plane = {
+            x: 50,
+            y: canvas.height / 2,
+            width: 50,
+            height: 30,
+            color: "blue",
+            velocityY: 0,
+            gravity: 0.5,
+        };
+
+        const obstacles = [];
+        let gameOver = false;
+        let score = 0;
+
+        function drawPlane() {
+            ctx.fillStyle = plane.color;
+            ctx.fillRect(plane.x, plane.y, plane.width, plane.height);
+        }
+
+        function createObstacle() {
+            const gap = 150;
+            const obstacleHeight = Math.random() * (canvas.height - gap);
+            obstacles.push({
+                x: canvas.width,
+                width: 50,
+                topHeight: obstacleHeight,
+                bottomY: obstacleHeight + gap,
+            });
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = "red";
+            obstacles.forEach((obstacle) => {
+                // Верхнее препятствие
+                ctx.fillRect(obstacle.x, 0, obstacle.width, obstacle.topHeight);
+                // Нижнее препятствие
+                ctx.fillRect(
+                    obstacle.x,
+                    obstacle.bottomY,
+                    obstacle.width,
+                    canvas.height - obstacle.bottomY
+                );
+            });
+        }
+
+        function updateObstacles() {
+            obstacles.forEach((obstacle) => {
+                obstacle.x -= 5;
+
+                // Проверка столкновения
+                if (
+                    plane.x < obstacle.x + obstacle.width &&
+                    plane.x + plane.width > obstacle.x &&
+                    (plane.y < obstacle.topHeight || plane.y + plane.height > obstacle.bottomY)
+                ) {
+                    gameOver = true;
+                }
+            });
+
+            // Удаление пройденных препятствий
+            if (obstacles.length && obstacles[0].x + obstacles[0].width < 0) {
+                obstacles.shift();
+                score++;
+            }
+        }
+
+        function drawScore() {
+            ctx.font = "30px Arial";
+            ctx.fillStyle = "black";
+            ctx.fillText(`Score: ${score}`, 10, 40);
+        }
+
+        function gameLoop() {
+            if (gameOver) {
+                ctx.font = "50px Arial";
+                ctx.fillStyle = "black";
+                ctx.fillText("Game Over", canvas.width / 2 - 150, canvas.height / 2);
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            plane.velocityY += plane.gravity;
+            plane.y += plane.velocityY;
+
+            if (plane.y + plane.height > canvas.height || plane.y < 0) {
+                gameOver = true;
+            }
+
+            drawPlane();
+            drawObstacles();
+            updateObstacles();
+            drawScore();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Создание препятствий каждые 2 секунды
+        setInterval(createObstacle, 2000);
+
+        // Управление самолётом
+        window.addEventListener("keydown", () => {
+            plane.velocityY = -10;
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
